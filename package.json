@@ -1,0 +1,12 @@
+{
+  "name": "dut-course-register-helper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node register-helper.cjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.52.0"
+  }
+}
