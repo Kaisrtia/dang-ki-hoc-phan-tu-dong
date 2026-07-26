@@ -3,8 +3,8 @@ const { chromium } = require("playwright-core");
 
 const CONFIG = {
   url: process.env.DUT_URL || "https://dangkytinchi.dut.udn.vn/course-sections",
-  courseCode: process.env.COURSE_CODE || "2100010",
-  sectionCode: process.env.SECTION_CODE || "2100010.2521.yy.94",
+  courseCode: process.env.COURSE_CODE || "1023220",
+  sectionCode: process.env.SECTION_CODE || "1023220.2610.24.10",
   userDataDir: process.env.USER_DATA_DIR || path.join(__dirname, ".dut-register-profile"),
   browserChannel: process.env.BROWSER_CHANNEL || undefined,
   executablePath: process.env.BROWSER_PATH || undefined,
@@ -126,25 +126,19 @@ async function clickSectionRegister(page) {
 
   await row.waitFor({ timeout: 15000 });
   const registerButton = row.getByRole("button", { name: /^Đăng ký$/ });
+  if ((await registerButton.count()) === 0) {
+    return false;
+  }
+
+  if (!(await registerButton.isVisible())) {
+    return false;
+  }
+
   await registerButton.scrollIntoViewIfNeeded();
   await registerButton.click();
-  await acceptConfirmIfVisible(page);
   await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
   await sleep(CONFIG.actionDelayMs);
-}
-
-async function acceptConfirmIfVisible(page) {
-  const confirmButton = page
-    .getByRole("button", { name: /^(Đồng ý|Xác nhận|OK|Có)$/i })
-    .first();
-
-  try {
-    await confirmButton.waitFor({ state: "visible", timeout: 1500 });
-    await confirmButton.click();
-    log("Đã xác nhận hộp thoại đăng ký.");
-  } catch {
-    // No confirmation modal appeared.
-  }
+  return true;
 }
 
 async function oneAttempt(page, attempt) {
@@ -163,7 +157,12 @@ async function oneAttempt(page, attempt) {
   }
 
   log(`Đã bấm Chi tiết cho học phần ${CONFIG.courseCode}.`);
-  await clickSectionRegister(page);
+  const registerClicked = await clickSectionRegister(page);
+  if (!registerClicked) {
+    log(`Không thấy nút Đăng ký cho lớp ${CONFIG.sectionCode} (có thể lớp đã full). Sẽ thử lại ở lần kế tiếp.`);
+    return "retry";
+  }
+
   log(`Đã bấm Đăng ký cho lớp ${CONFIG.sectionCode}.`);
 
   await page.waitForTimeout(CONFIG.actionDelayMs);
